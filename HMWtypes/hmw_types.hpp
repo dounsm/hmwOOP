@@ -8,81 +8,105 @@
 
 typedef double number;
 
-namespace NN{
-    enum class SourceNodeType {
-        Neuron,NumSource,None
+namespace NN
+{
+    enum class SourceNodeType
+    {
+        Neuron,
+        NumSource,
+        None
     };
-    
-    struct SourceNode {
+
+    struct SourceNode
+    {
         SourceNodeType type = SourceNodeType::None;
-
-    };
-    
-    class Synapse{
-        public:
-            Neuron *from = nullptr,*to = nullptr;
-            number weight;
-
-            number getResult(void);
-
     };
 
-    class BasicNode{
-        public:
-            virtual number forward(void);
-            virtual ~BasicNode();
+    class Synapse
+    {
+    public:
+        Neuron *from = nullptr, *to = nullptr;
+        number weight;
+
+        number getResult(void);
     };
 
-    class NumSource: public BasicNode{
-        private:
-            number num;
-        public:
-            number forward(void);
+    class BasicNode
+    {
+    public:
+        virtual number forward(void);
+        virtual ~BasicNode();
     };
 
-    class Neuron: public BasicNode{
-        private:
-            std::vector<Synapse*> dendrites;
-            std::function<number(number)> activationFunction;
-        public:
-            Neuron();
-            number forward(void);
+    class NumSource : public BasicNode
+    {
+    private:
+        number num;
+
+    public:
+        number forward(void);
     };
 
-    class Layer{
-        private:
-            std::vector<Neuron*> neurons;
-        public:
-            Layer(int count = 1);
+    class Neuron : public BasicNode
+    {
+    private:
+        std::vector<Synapse *> dendrites;
+        std::unique_ptr<ActivationFunction> activationFunction;
+        number bias;
+    public:
+        Neuron(number bias);
+        number forward(void);
     };
 
-    class Network{
-        private:
-            std::vector<Layer*> layers;
-        public:
-            Network(int count = 1);
-            std::shared_ptr<std::vector<number>> forward(std::vector<number>& dat);
+    class Layer
+    {
+    private:
+        std::vector<Neuron *> neurons;
+
+    public:
+        Layer(int count = 1);
     };
 
-    struct Activations {
-    // Sigmoid
-    static inline std::function<number(number)> sigmoid =
-        [](number x) -> number {
-            return number(1) / (number(1) + std::exp(-x));
-        };
+    class Network
+    {
+    private:
+        std::vector<Layer *> layers;
 
-    // Tanh
-    static inline std::function<number(number)> tanh =
-        [](number x) -> number {
-            return std::tanh(x);
-        };
+    public:
+        Network(int count = 1);
+        std::shared_ptr<std::vector<number>> forward(std::vector<number> &dat);
+    };
 
-    // ReLU
-    static inline std::function<number(number)> relu =
-        [](number x) -> number {
-            return x > number(0) ? x : number(0);
-        };
-};
+    class ActivationFunction
+    {
+    public:
+        virtual ~ActivationFunction() = default;
+        virtual number Compute(number x) const = 0;
+    };
+
+    class Linear : public ActivationFunction
+    {
+    public:
+        number Compute(number x) const override;
+    };
+
+    class Sigmoid : public ActivationFunction
+    {
+    public:
+        number Compute(number x) const override;
+    };
+
+    class Tanh : public ActivationFunction
+    {
+    public:
+        number Compute(number x) const override;
+    };
+
+    class ReLU : public ActivationFunction
+    {
+    public:
+        number Compute(number x) const override;
+    };
 };
 
 #endif
